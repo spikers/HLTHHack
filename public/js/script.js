@@ -1,16 +1,22 @@
 var count = 0;
+var trackLength = 0;
+var musicPlayer = {};
+var musicJson = {};
+var currentSong = {};
+var targets = {};
+var target;
 
 document.addEventListener('DOMContentLoaded', function () {
     var musicData = {};
     var userData = {};
-
+    musicPlayer = document.getElementById("song-audio")
     var xhr = new XMLHttpRequest();
 
-    xhr.open("GET", "http://localhost:3000/api/musiclist");
+    xhr.open("GET", "./api/musiclist");
 
     xhr.addEventListener("load", function (data) {
         musicData = data;
-        console.log(musicData);
+        // console.log(musicData);
         initiate(userData, musicData);
     });
 
@@ -18,11 +24,11 @@ document.addEventListener('DOMContentLoaded', function () {
     
     var xhr2 = new XMLHttpRequest();
 
-    xhr2.open("GET", "http://localhost:3000/api/heartrate?id=user");
+    xhr2.open("GET", "./api/heartrate?id=user");
 
     xhr2.addEventListener("load", function (data) {
         userData = data;
-        console.log(userData);
+        // console.log(userData);
         initiate(userData, musicData);
     });
 
@@ -35,25 +41,25 @@ function initiate(userData, musicData) {
         var userJson = JSON.parse(userData.target.response);
         populateUserData(userJson);
 
-        var musicJson = JSON.parse(musicData.target.response);
-        console.log("Loaded");
-        console.log("musicJson", musicJson);
-        console.log("userJson", userJson);
+        musicJson = JSON.parse(musicData.target.response);
+        // console.log("Loaded");
+        // console.log("musicJson", musicJson);
+        // console.log("userJson", userJson);
 
         var song = getRandomSong(musicJson);
 
-        console.log(song);
+        // console.log(song);
 
-        var targets = getHrTargets(userJson);
+        targets = getHrTargets(userJson);
 
-        var musicPlayer = document.getElementById("song-audio");
-        var musicSource = `http://localhost:3000/sounds/${song.filename}`;
+        var musicSource = `./sounds/${song.filename}`;
         musicPlayer.src = musicSource;
 
         document.getElementById("fat-burning").addEventListener("click", function () {
             target = targets.fb;
             musicPlayer.playbackRate = target / song.bpm
             musicPlayer.play();
+
         });
         
         document.getElementById("cardio").addEventListener("click", function () {
@@ -77,11 +83,12 @@ function getRandomSong(musicJson, currentSong) {
     if (newIndex == currentIndex) {
         newIndex = Math.abs(newIndex - 1);
     }
+    currentSong = musicJson[newIndex];
     return musicJson[newIndex];
 }
 
 function getSongIndex(musicJson, currentSong) {
-    return musicJson.indexOf(current);
+    return musicJson.indexOf(currentSong);
 }
 
 function populateUserData(userJson) {
@@ -101,3 +108,12 @@ function getHrTargets(userJson) {
     var targets = { fb: fbTarget, c: cTarget };
     return targets;
 }
+
+window.setInterval(function () {
+    if (musicPlayer.ended) {
+        var song = getRandomSong(musicJson, currentSong);
+        musicPlayer.src = `./sounds/${song.filename}`;
+        musicPlayer.playbackRate = target / song.bpm
+        musicPlayer.play();
+    }
+}, 250);
